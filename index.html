@@ -1,0 +1,108 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <script src="script.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Img To PDF</title>
+    <link rel="icon" type="image/x-icon" href="icon.jpg">
+</head>
+
+<body>
+    <div class="nav">
+        <div>
+            <button onClick="embedImages()" id="download">DOWNLOAD</button>
+        </div>
+    </div>
+
+    <div class="input-page" id="input-page">
+        <div class="choose-file">
+            <div class="add-more-files">
+                <input type="file" onChange="encodeImageFileAsURL(this)" multiple accept="image/*" />
+                <div class="inp-container">
+                    <!-- <input type="file" onChange="encodeImageFileAsURL(this)" multiple accept="image/*" /> -->
+                    <h4 class="drop">
+                        DRAG & DROP OR
+                    </h4>
+                    <p>
+                        <i class="fa fa-file-image-o fa-4x img-icon"></i>
+                    </p>
+                    <label For="upload-file" id="custom-file">CHOOSE FILES</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+
+    <footer>Created by :Aman Agrawal</footer>
+
+</body>
+
+</html>
+
+<script>
+    var data = [];
+    var width = 620;
+    var height = 800;
+    var pdfName;
+    var fileName = '';
+
+    encodeImageFileAsURL = (element) => {
+
+        const length = element.files.length;
+        for (var i = 0; i < length; i++) {
+            let file = element.files[i];
+            let pdfname = element.files[0];
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+
+            let obj = {
+                list: reader,
+                fileName: file.name,
+                time: new Date().toString() + i
+            }
+
+            reader.onloadend = () => {
+                data = [...data, obj];
+                pdfName = pdfname.name
+            }
+        }
+    }
+
+    //initiate file downloading
+    embedImages = async () => {
+        const pdfDoc = await PDFLib.PDFDocument.create();
+
+        if (data.length == 0) {
+            alert("Upload Image");
+        }
+
+        for (var i = 0; i < data.length; i++) {
+            const jpgUrl = data[i].list.result;
+            const jpgImageBytes = await fetch(jpgUrl).then((res) => res.arrayBuffer());
+
+            const jpgImage = await pdfDoc.embedJpg(jpgImageBytes);
+
+            //Add a blank page to the document
+            const page = pdfDoc.addPage();
+
+            //set page size
+            page.setSize(width, height);
+            page.drawImage(jpgImage, {
+                x: 20,
+                y: 50,
+                width: page.getWidth() - 40,
+                height: page.getHeight() - 100,
+            })
+        }
+
+        //save the padf pages
+        const pdfBytes = await pdfDoc.save();
+
+        //download pdf file 
+        download(pdfBytes, pdfName.slice(0, -4), "application/pdf");
+    }
+
+</script>
